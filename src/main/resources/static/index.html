@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Site de Notícias</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Site de Notícias</h1>
+
+<h2>Incluir Notícia</h2>
+<form id="formNoticia">
+    <label for="titulo">Título:</label>
+    <input type="text" id="titulo" name="titulo" required><br><br>
+
+    <label for="conteudo">Conteúdo:</label>
+    <textarea id="conteudo" name="conteudo" required></textarea><br><br>
+
+    <label for="autor">Autor:</label>
+    <input type="text" id="autor" name="autor" required><br><br>
+
+    <label for="dataPublicacao">Data de Publicação (DD-MM-YYYY):</label>
+    <input type="text" id="dataPublicacao" name="dataPublicacao" required><br><br>
+
+    <button type="submit">Salvar</button>
+</form>
+
+<h2>Lista de Notícias</h2>
+<table id="tabelaNoticias">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Título</th>
+        <th>Conteúdo</th>
+        <th>Autor</th>
+        <th>Data de Publicação</th>
+        <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody id="corpoTabela">
+    </tbody>
+</table>
+
+<script>
+
+    async function carregarNoticias() {
+        try {
+            const response = await fetch("http://localhost:8080/api/noticias");
+            const noticias = await response.json();
+            const corpoTabela = document.getElementById("corpoTabela");
+            corpoTabela.innerHTML = "";
+
+            noticias.forEach(noticia => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${noticia.id}</td>
+                    <td>${noticia.titulo}</td>
+                    <td>${noticia.conteudo}</td>
+                    <td>${noticia.autor}</td>
+                    <td>${noticia.dataPublicacao}</td>
+                    <td>
+                        <button onclick="editarNoticia(${noticia.id})">Editar</button>
+                        <button onclick="excluirNoticia(${noticia.id})">Excluir</button>
+                    </td>
+                `;
+                corpoTabela.appendChild(tr);
+            });
+        } catch (error) {
+            console.error("Erro ao carregar notícias:", error);
+        }
+    }
+
+    function editarNoticia(id) {
+    fetch(`http://localhost:8080/api/noticias/${id}`)
+        .then(response => response.json())
+        .then(noticia => {
+            const novoTitulo = prompt("Novo título:", noticia.titulo);
+            const novoConteudo = prompt("Novo conteúdo:", noticia.conteudo);
+            const novoAutor = prompt("Novo autor:", noticia.autor);
+            const novaData = prompt("Nova data (YYYY-MM-DD):", noticia.dataPublicacao);
+
+            if (novoTitulo && novoConteudo && novoAutor && novaData) {
+                const noticiaAtualizada = {
+                    titulo: novoTitulo,
+                    conteudo: novoConteudo,
+                    autor: novoAutor,
+                    dataPublicacao: novaData
+                };
+
+                fetch(`http://localhost:8080/api/noticias/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(noticiaAtualizada)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Notícia atualizada com sucesso!");
+                        carregarNoticias();
+                    } else {
+                        alert("Erro ao atualizar notícia.");
+                    }
+                });
+            }
+        });
+}
+
+    function excluirNoticia(id) {
+        if (confirm("Tem certeza que deseja excluir esta notícia?")) {
+            fetch(`http://localhost:8080/api/noticias/${id}`, {
+                method: "DELETE"
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Notícia excluída com sucesso!");
+                    carregarNoticias();
+                } else {
+                    alert("Erro ao excluir notícia.");
+                }
+            });
+        }
+    }
+
+    document.getElementById("formNoticia").addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const noticia = {
+            titulo: document.getElementById("titulo").value,
+            conteudo: document.getElementById("conteudo").value,
+            autor: document.getElementById("autor").value,
+            dataPublicacao: document.getElementById("dataPublicacao").value
+        };
+
+        try {
+            const response = await fetch("http://localhost:8080/api/noticias", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(noticia)
+            });
+            const novaNoticia = await response.json();
+            console.log("Notícia salva:", novaNoticia);
+            alert("Notícia salva com sucesso!");
+            document.getElementById("formNoticia").reset();
+            carregarNoticias();
+        } catch (error) {
+            console.error("Erro ao salvar notícia:", error);
+            alert("Erro ao salvar notícia.");
+        }
+    });
+
+    window.onload = carregarNoticias;
+</script>
+</body>
+</html>
