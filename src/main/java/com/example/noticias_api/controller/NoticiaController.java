@@ -31,7 +31,9 @@ public class NoticiaController {
     }
 
     @PutMapping("/{id}")
-    public Noticia atualizarNoticia(@PathVariable Long id, @RequestBody Noticia noticia) {
+    public Noticia atualizarNoticia(@PathVariable Long id,
+                                    @RequestBody Noticia noticia) {
+
         return noticiaService.atualizarNoticia(id, noticia);
     }
 
